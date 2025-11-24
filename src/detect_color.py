@@ -1,143 +1,53 @@
-# detectcolor.py
+# classify_bag.py (Updated for Color Camera)
 import cv2
 import numpy as np
 
-# Tuned general ranges (can be adjusted later)
+# --- HSV Color Ranges for Bag Classification ---
+# These are general ranges for typical green, blue, and black plastic.
+# They are more reliable than the mono thresholds but still benefit from testing!
 COLOR_RANGES = {
-    "garbage": [  # black
+    "garbage": [  # BLACK: Low Value (V) = dark
         (np.array([0, 0, 0]), np.array([180, 255, 60]))
     ],
-    "recycling": [  # blue
-        (np.array([85, 80, 20]), np.array([140, 255, 255]))
+    "recycling": [  # BLUE: Hue around 100-140
+        (np.array([95, 80, 50]), np.array([135, 255, 255]))
     ],
-    "compost": [  # green
-        (np.array([35, 40, 40]), np.array([90, 255, 255]))
+    "compost": [  # GREEN: Hue around 30-90
+        (np.array([30, 40, 40]), np.array([85, 255, 255]))
     ]
 }
 
-
-def classify_color(frame):
+def classify_bag(frame):
     """
+    Analyzes the frame (from the COLOR camera) using HSV color thresholding
+    to classify the bag into garbage (black), recycling (blue), or compost (green).
+    
     Returns: 'garbage', 'recycling', 'compost', or 'unknown'
     """
+    
+    # 1. Convert to HSV color space
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
+    # 2. Iterate through color definitions and check for coverage
     for label, ranges in COLOR_RANGES.items():
         mask_total = None
 
         for (lower, upper) in ranges:
             mask = cv2.inRange(hsv, lower, upper)
-            mask_total = mask if mask_total is None else mask_total + mask
+            mask_total = mask if mask_total is None else cv2.bitwise_or(mask_total, mask)
 
-        # Check coverage
+        # Count the number of pixels within the color range
         coverage = cv2.countNonZero(mask_total)
 
-        if coverage > 5000:  # adjust depending on camera distance
-            return label
+        # Threshold check: If the color covers a large enough area (5000 pixels, adjust based on distance)
+        # and it's not the black bag (which can be tricky due to shadows), return the label.
+        if label != "garbage" and coverage > 5000:
+             # For Green and Blue, coverage is the best metric
+             return label
+        
+        if label == "garbage" and coverage > 20000:
+             # For black (low V), we need a larger pixel count to be sure it's the bag and not shadows
+             return label
+
 
     return "unknown"
-
-
-
-
-
-
-
-
-
-
-##Commented out old code below##
-
-
-# #!/usr/bin/env python3
-# import cv2
-# import numpy as np
-
-# # ---------------------------------------------------------
-# # Color ranges in HSV for black, blue, and green
-# # ---------------------------------------------------------
-# COLOR_RANGES = {
-#     "black": [
-#         (np.array([0, 0, 0]), np.array([180, 255, 70]))  # dark values = black
-#     ],
-#     "blue": [
-#         (np.array([94, 80, 2]), np.array([126, 255, 255]))
-#     ],
-#     "green": [
-#         (np.array([36, 100, 100]), np.array([86, 255, 255]))
-#     ]
-# }
-
-# # BGR colors for drawing rectangles (adapted for detection with the webcam)
-# DRAW_COLORS = {
-#     "black": (0, 0, 0),
-#     "blue": (255, 0, 0),
-#     "green": (0, 255, 0)
-# }
-
-
-# def detect_color(frame, hsv_frame, color_name, ranges):
-#     """
-#     Detects a specific color and draws bounding boxes.
-#     """
-#     # Combine multiple ranges (for colors that span across hue)
-#     mask_total = None
-#     for (lower, upper) in ranges:
-#         mask = cv2.inRange(hsv_frame, lower, upper)
-#         mask_total = mask if mask_total is None else mask_total + mask
-
-#     # Clean the mask
-#     kernel = np.ones((5, 5), np.uint8)
-#     mask_clean = cv2.morphologyEx(mask_total, cv2.MORPH_OPEN, kernel)
-#     mask_clean = cv2.morphologyEx(mask_clean, cv2.MORPH_DILATE, kernel)
-
-#     # Contours
-#     contours, _ = cv2.findContours(mask_clean, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-#     for cnt in contours:
-#         if cv2.contourArea(cnt) > 800:  # filter small noise
-#             x, y, w, h = cv2.boundingRect(cnt)
-#             cv2.rectangle(frame, (x, y), (x + w, y + h), DRAW_COLORS[color_name], 2)
-#             cv2.putText(frame, color_name.upper(), (x, y - 10),
-#                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, DRAW_COLORS[color_name], 2)
-
-#     return mask_clean
-
-
-# def main():
-#     cap = cv2.VideoCapture(0)
-
-#     if not cap.isOpened():
-#         print("❌ Could not open camera")
-#         return
-
-#     print("🎥 Camera active — detecting BLACK, BLUE, GREEN (press 'q' to quit)")
-
-#     while True:
-#         ret, frame = cap.read()
-#         if not ret:
-#             break
-
-#         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
-#         # Masks display window
-#         mask_display = np.zeros(frame.shape[:2], dtype=np.uint8)
-
-#         # Detect each color
-#         for color_name, ranges in COLOR_RANGES.items():
-#             mask_clean = detect_color(frame, hsv, color_name, ranges)
-#             mask_display = cv2.bitwise_or(mask_display, mask_clean)
-
-#         # Show everything
-#         cv2.imshow("Color Detection", frame)
-#         cv2.imshow("Masks (Combined)", mask_display)
-
-#         if cv2.waitKey(1) & 0xFF == ord('q'):
-#             break
-
-#     cap.release()
-#     cv2.destroyAllWindows()
-
-
-# if __name__ == "__main__":
-#     main()
