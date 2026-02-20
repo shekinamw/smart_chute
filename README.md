@@ -36,7 +36,7 @@ Or from another device: `http://YOUR_PI_IP:5050`
 
 ---
 
-## 🏗️ How It Works
+##  How It Works
 
 ### Components
 
