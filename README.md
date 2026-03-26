@@ -35,7 +35,6 @@ smart_chute/
 └── docs/                     # Project documentation (TBD)
 ```
 
-This structure matches the **R3 class diagram** exactly.
 
 ---
 
