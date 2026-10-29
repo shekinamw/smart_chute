@@ -30,9 +30,9 @@ smart_chute/
 │   ├── storage.py            # StorageManager   — burst frames + sort logs
 │   └── logger.py             # Bin-level logging + console status bars
 │
-├── web/                      # Flask dashboard (TBD)
-├── tests/                    # Hardware test scripts (TBD)
-└── docs/                     # Project documentation (TBD)
+├── web/                      # Flask dashboard 
+├── tests/                    # Hardware test scripts 
+└── docs/                     # Project documentation 
 ```
 
 
@@ -43,11 +43,11 @@ smart_chute/
 | Component              | Interface        | Notes                                     |
 |------------------------|------------------|-------------------------------------------|
 | Raspberry Pi 4B        | —                | Host controller                           |
-| PCA9685 servo driver   | I2C (0x40)       | Direct smbus2 — no Blinka (Python 3.13)   |
-| SG90 servos × 2       | PCA9685 CH11, 15 | External 5 V power (not Pi GPIO rail!)    |
+| PCA9685 servo driver   | I2C (0x40)       | smbus2                                   |
+| SG90 servos × 2       | PCA9685 CH11, 15 | External 5 V power     |
 | Pi Camera Global Shutter| CSI              | Manual focus lock, AWB on                 |
 | IR breakbeam sensor    | GPIO 18          | 10 ms debounce, ~5 kHz polling            |
-| HC-SR04 ultrasonic × 3 | GPIO 27/17, 13/19, 5/6 | Only RECYCLING wired currently     |
+| HC-SR04 ultrasonic × 3 | GPIO 27/17, 13/19, 5/6 |      |
 
 
 
@@ -75,18 +75,17 @@ The system uses HC-SR04 ultrasonic sensors to measure the distance from the
 sensor (mounted at the top of each bin) to the waste surface.  Fill percentage
 is calculated as `(1 - distance / bin_height) × 100`.
 
-When a bin's measured distance falls below the `--full-at` threshold (default
-5 cm), a **BIN FULL** alert is logged to `data/logs/bin_levels.txt` and printed
+When a bin's measured distance falls below the `--full-at` threshold, a **BIN FULL** alert is logged to `data/logs/bin_levels.txt` and printed
 to the console.
 
-Currently only the **RECYCLING** sensor is wired (TRIG=27, ECHO=17). To
+In this version, only the **RECYCLING** sensor is wired for testing (TRIG=27, ECHO=17). To
 activate additional sensors, uncomment the entries in `config.py`:
 
 ```python
 ULTRASONIC_SENSORS = {
     "RECYCLING": {"trig": 27, "echo": 17},
-    "COMPOST":   {"trig": 13, "echo": 19},   # ← uncomment
-    "GARBAGE":   {"trig": 5,  "echo": 6},    # ← uncomment
+    "COMPOST":   {"trig": 13, "echo": 19},   
+    "GARBAGE":   {"trig": 5,  "echo": 6},   
 }
 ```
 
